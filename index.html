@@ -1,1 +1,246 @@
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/drippy-cat/snowrider3D@c82fe583cbffafa502b0aa3ed2da0053972e0c80/TemplateData/style.css"> <script src="https://cdn.jsdelivr.net/gh/drippy-cat/snowrider3D@c82fe583cbffafa502b0aa3ed2da0053972e0c80/TemplateData/UnityProgress.js"></script> <script src="https://cdn.jsdelivr.net/gh/drippy-cat/snowrider3D@c82fe583cbffafa502b0aa3ed2da0053972e0c80/Build/UnityLoader.js"></script> <script> var gameInstance = UnityLoader.instantiate("gameContainer", "https://cdn.jsdelivr.net/gh/drippy-cat/snowrider3D@c82fe583cbffafa502b0aa3ed2da0053972e0c80/Build/SnowRider3D-gd-1.json", {onProgress: UnityProgress,Module:{onRuntimeInitialized: function() {UnityProgress(gameInstance, "complete")}}}); </script> <div class="webgl-content"> <div id="gameContainer" style="width: 100%; height: 100%; margin: auto"></div> </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hamsters on a Ferris Wheel</title>
+  <style>
+    .no-hitbox {
+      pointer-events: none; /* Disables interaction */
+
+      /* Adjustable via CSS variables */
+      font-size: var(--text-size, 20px);
+      color: var(--text-color, #fff);
+      font-family: var(--text-font, Arial, sans-serif);
+
+      position: absolute;
+      top: var(--text-top, 50px);
+      left: var(--text-left, 50px);
+    }
+    
+    body {
+      background: radial-gradient(circle at top, #0b0b2e, #000);
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      color: white;
+    }
+
+    /* Starry background */
+    body::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: transparent url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR5NIAxIsS1ENGRSqvR55KQ_DXqbhKdX-XyqA&s") repeat;
+      animation: twinkle 10s linear infinite;
+      z-index: 0;
+    }
+
+    @keyframes twinkle {
+      from { background-position: 0 0; }
+      to { background-position: 1000px 1000px; }
+    }
+
+    .ferris-container {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      z-index: 1;
+    }
+
+    .ferris-wheel {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border: 8px solid #444;
+      border-radius: 50%;
+      box-shadow: 0 0 25px #ffeb3b, 0 0 50px #ff9800 inset;
+    }
+
+    /* Rotating container */
+    .spokes-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      animation: spin 20s linear infinite;
+    }
+
+    /* Lights */
+    .light {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ff0;
+      box-shadow: 0 0 10px #ff0, 0 0 20px #ffa500;
+    }
+
+    .light:nth-child(1) { top: -6px; left: 194px; }
+    .light:nth-child(2) { top: 50px; left: 345px; }
+    .light:nth-child(3) { top: 160px; left: 394px; }
+    .light:nth-child(4) { top: 290px; left: 345px; }
+    .light:nth-child(5) { bottom: -6px; left: 194px; }
+    .light:nth-child(6) { top: 290px; left: 35px; }
+    .light:nth-child(7) { top: 160px; left: -6px; }
+    .light:nth-child(8) { top: 50px; left: 35px; }
+
+    /* Hub */
+    .hub {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: #ff5722;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      box-shadow: 0 0 20px #ff5722, 0 0 40px #ff9800;
+    }
+
+    /* Spokes */
+    .spoke {
+      position: absolute;
+      width: 2px;
+      height: 500px;
+      background: #888;
+      left: 50%;
+      top: -12.5%;
+      transform-origin: center;
+      z-index: 3;
+    }
+
+    .spoke:nth-child(2) { transform: rotate(0deg); }
+    .spoke:nth-child(3) { transform: rotate(45deg); }
+    .spoke:nth-child(4) { transform: rotate(90deg); }
+    .spoke:nth-child(5) { transform: rotate(135deg); }
+    .spoke:nth-child(6) { transform: rotate(180deg); }
+    .spoke:nth-child(7) { transform: rotate(225deg); }
+    .spoke:nth-child(8) { transform: rotate(270deg); }
+    .spoke:nth-child(9) { transform: rotate(315deg); }
+
+    /* Carriages */
+    .carriage {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: white;
+      border: 3px solid #222;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      box-shadow: 0 0 15px #0ff, 0 0 30px #00f;
+
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      z-index: 3;
+    }
+
+    .carriage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+
+      /* Start angle + counter-spin */
+      transform: rotate(var(--start-angle, 0deg));
+      animation: img-counter-spin var(--counter-speed, 20s) linear infinite;
+    }
+
+    /* Support legs */
+    .leg {
+      position: absolute;
+      width: 12px;
+      height: 70px;
+      background: #555;
+      bottom: 0;
+      transform-origin: bottom center;
+      box-shadow: 0 0 15px #ff0;
+    }
+
+    .leg.left {
+      left: 130px;
+      transform: rotate(15deg);
+    }
+
+    .leg.right {
+      right: 130px;
+      transform: rotate(-15deg);
+    }
+
+    /* Base */
+    .base {
+      position: absolute;
+      width: 100%;
+      height: 30px;
+      background: #111;
+      bottom: 0;
+      border-radius: 5px;
+      box-shadow: 0 0 20px #ff0;
+    }
+
+    /* Animations */
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    @keyframes img-counter-spin {
+      from { transform: rotate(var(--start-angle, 0deg)); }
+      to   { transform: rotate(calc(var(--start-angle, 0deg) - 360deg)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="ferris-container">
+    <div class="ferris-wheel">
+      <!-- Lights -->
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+      <div class="light"></div>
+
+      <!-- Spokes + Carriages -->
+      <div class="spokes-container">
+        <div class="hub"></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:0deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:315deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:270deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:225deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:180deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:135deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:90deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+        <div class="spoke"><div class="carriage"><img style="--start-angle:45deg; --counter-speed:20s" src="https://cdn2.vectorstock.com/i/1000x1000/96/21/cute-hamster-cartoon-vector-20769621.jpg"></div></div>
+      </div>
+    </div>
+
+    <!-- Support + Base -->
+    <div class="leg left"></div>
+    <div class="leg right"></div>
+    <div class="base"></div>
+  </div>
+
+  <!-- Adjustable text -->
+  <div 
+    class="no-hitbox"
+    style="--text-color: pink; --text-size: 28px; --text-font: 'Comic Sans MS', cursive; --text-top: 20%; --text-left: 30%;">
+    Hang on tight — things are about to get fur-ocious!
+  </div>
+</body>
+</html>
+
+
